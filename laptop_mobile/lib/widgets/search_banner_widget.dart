@@ -2,20 +2,20 @@ import 'package:flutter/material.dart';
 
 class SearchBannerWidget extends StatelessWidget {
   final String searchQuery;
-  final int topMatchPercentage;
-  final int bestValuePercentage;
+  final int topMatchPercent;
+  final int bestValuePercent;
 
   const SearchBannerWidget({
     super.key,
     required this.searchQuery,
-    required this.topMatchPercentage,
-    required this.bestValuePercentage,
+    required this.topMatchPercent,
+    required this.bestValuePercent,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.fromLTRB(14, 12, 14, 0),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -28,39 +28,38 @@ class SearchBannerWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Search context text
-          RichText(
-            text: TextSpan(
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 13,
-                height: 1.4,
-              ),
-              children: [
-                const TextSpan(text: 'Based on your recent search for '),
-                TextSpan(
-                  text: '"$searchQuery"',
-                  style: const TextStyle(
-                    color: Color(0xFF5B9EF4),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const TextSpan(text: '.'),
-              ],
+          Text(
+            'Based on your recent search for',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.65),
+              fontSize: 11,
             ),
           ),
-          const SizedBox(height: 12),
-          // Stat cards row
+          const SizedBox(height: 4),
+          Text(
+            '"$searchQuery".',
+            style: const TextStyle(
+              color: Color(0xFF5B9EF4),
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: 14),
           Row(
             children: [
-              _StatCard(
-                label: 'Top Match',
-                value: '$topMatchPercentage%',
+              Expanded(
+                child: _StatCard(
+                  label: 'TOP MATCH',
+                  value: '$topMatchPercent%',
+                ),
               ),
               const SizedBox(width: 10),
-              _StatCard(
-                label: 'Best Value',
-                value: '$bestValuePercentage%',
+              Expanded(
+                child: _StatCard(
+                  label: 'BEST VALUE',
+                  value: '$bestValuePercent%',
+                ),
               ),
             ],
           ),
@@ -78,39 +77,35 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.15),
-            width: 1,
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.55),
+              fontSize: 9,
+              letterSpacing: 1.2,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white60,
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-              ),
+          const SizedBox(height: 3),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
             ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

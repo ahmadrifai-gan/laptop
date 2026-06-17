@@ -2,192 +2,244 @@ import 'package:flutter/material.dart';
 import '../models/laptop_model.dart';
 
 class LaptopCardWidget extends StatelessWidget {
-  final Laptop laptop;
-  final bool isPrimary; // true = blue "View Specs", false = outlined button
+  final LaptopModel laptop;
+  final int rank;
+  final int matchPercent;
+  final bool isPrimary;
+  final VoidCallback? onViewSpecs;
+  final VoidCallback? onCompare;
 
   const LaptopCardWidget({
     super.key,
     required this.laptop,
+    required this.rank,
+    required this.matchPercent,
     this.isPrimary = false,
+    this.onViewSpecs,
+    this.onCompare,
   });
+
+  Color get _matchColor {
+    if (matchPercent >= 95) return const Color(0xFF1A73E8);
+    if (matchPercent >= 85) return const Color(0xFF10B981);
+    if (matchPercent >= 75) return const Color(0xFF7C3AED);
+    return const Color(0xFF6B7280);
+  }
+
+  Color get _categoryColor {
+    switch (laptop.kategori.toLowerCase()) {
+      case 'gaming':
+        return const Color(0xFFFF6B6B);
+      case 'programming':
+        return const Color(0xFF4ECDC4);
+      case 'office':
+        return const Color(0xFFFFA502);
+      default:
+        return const Color(0xFF1A73E8);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: const EdgeInsets.fromLTRB(14, 0, 14, 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 12,
+            color: Colors.black.withValues(alpha: 0.07),
+            blurRadius: 14,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
-        child: Column(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top row: image + info + match badge
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Product Image with optional FEATURED badge
-                _ProductImage(
-                  imageUrl: laptop.imageUrl,
-                  isFeatured: laptop.isFeatured,
-                ),
-                const SizedBox(width: 12),
-                // Product Info
-                Expanded(
-                  child: Column(
+            // Product image
+            _ProductImage(
+              kategori: laptop.kategori,
+              isFeatured: rank == 1,
+              categoryColor: _categoryColor,
+            ),
+            const SizedBox(width: 12),
+            // Content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Name + Match badge
+                  Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Name + Match badge
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              laptop.name,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              laptop.product,
                               style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF1A2040),
-                                height: 1.3,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1F2937),
+                                height: 1.25,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              laptop.company,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Color(0xFF9CA3AF),
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 6),
-                          _MatchBadge(percentage: laptop.matchPercentage),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      // Processor • Color
-                      Text(
-                        '${laptop.processor} • ${laptop.color}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF888EA8),
-                          fontWeight: FontWeight.w500,
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      // Specs row
-                      Row(
-                        children: [
-                          _SpecBadge(
-                            icon: Icons.memory,
-                            label: laptop.ramLabel,
-                          ),
-                          const SizedBox(width: 8),
-                          _SpecBadge(
-                            icon: _specIcon(laptop.storageOrGpu),
-                            label: laptop.storageOrGpu,
-                          ),
-                        ],
+                      const SizedBox(width: 8),
+                      _MatchBadge(
+                        percent: matchPercent,
+                        color: _matchColor,
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            // Divider
-            Container(
-              height: 1,
-              color: const Color(0xFFF0F1F6),
-            ),
-            const SizedBox(height: 12),
-            // Bottom row: Price + Action Button
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  laptop.priceFormatted,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1A2040),
+                  const SizedBox(height: 9),
+                  // Spec badges
+                  Wrap(
+                    spacing: 5,
+                    runSpacing: 4,
+                    children: [
+                      _SpecBadge(
+                        icon: Icons.memory_outlined,
+                        label: laptop.ramLabel,
+                      ),
+                      _SpecBadge(
+                        icon: Icons.developer_board_outlined,
+                        label: laptop.cpu,
+                      ),
+                      if (laptop.opSys != null && laptop.opSys!.isNotEmpty)
+                        _SpecBadge(
+                          icon: Icons.laptop_outlined,
+                          label: laptop.opSys!,
+                        ),
+                    ],
                   ),
-                ),
-                _ActionButton(
-                  isPrimary: isPrimary,
-                  label: isPrimary ? 'View Specs' : _buttonLabel(laptop),
-                ),
-              ],
+                  const SizedBox(height: 10),
+                  // Price + Button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'PRICE',
+                            style: TextStyle(
+                              fontSize: 8,
+                              letterSpacing: 1.2,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF9CA3AF),
+                            ),
+                          ),
+                          Text(
+                            laptop.priceFormatted,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1F2937),
+                            ),
+                          ),
+                        ],
+                      ),
+                      _ActionButton(
+                        isPrimary: isPrimary,
+                        onPressed: isPrimary ? onViewSpecs : onCompare,
+                        label: isPrimary ? 'View Specs' : 'Compare',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
     );
   }
-
-  IconData _specIcon(String spec) {
-    final lower = spec.toLowerCase();
-    if (lower.contains('cpu') || lower.contains('core')) {
-      return Icons.developer_board;
-    } else if (lower.contains('rtx') || lower.contains('gpu')) {
-      return Icons.videogame_asset;
-    } else if (lower.contains('ssd') || lower.contains('tb') || lower.contains('gb')) {
-      return Icons.storage;
-    }
-    return Icons.memory;
-  }
-
-  String _buttonLabel(Laptop laptop) {
-    if (laptop.matchPercentage >= 85) return 'Compare';
-    return 'View Specs';
-  }
 }
 
-// ─── Product Image ────────────────────────────────────────────────────────────
-class _ProductImage extends StatelessWidget {
-  final String imageUrl;
-  final bool isFeatured;
+// ── Sub-widgets ─────────────────────────────────────────────────
 
-  const _ProductImage({required this.imageUrl, required this.isFeatured});
+class _ProductImage extends StatelessWidget {
+  final String kategori;
+  final bool isFeatured;
+  final Color categoryColor;
+
+  const _ProductImage({
+    required this.kategori,
+    required this.isFeatured,
+    required this.categoryColor,
+  });
+
+  IconData get _icon {
+    switch (kategori.toLowerCase()) {
+      case 'gaming':
+        return Icons.sports_esports_outlined;
+      case 'programming':
+        return Icons.code;
+      case 'office':
+        return Icons.work_outline;
+      default:
+        return Icons.laptop_mac;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Stack(
+      clipBehavior: Clip.none,
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: Image.network(
-            imageUrl,
-            width: 90,
-            height: 90,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => _PlaceholderImage(),
-                        loadingBuilder: (context, child, progress) {
-                          if (progress == null) return child;
-                          return _PlaceholderImage();
-                        },
+        Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            color: categoryColor.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: categoryColor.withValues(alpha: 0.20),
+            ),
+          ),
+          child: Center(
+            child: Icon(
+              _icon,
+              size: 34,
+              color: categoryColor.withValues(alpha: 0.85),
+            ),
           ),
         ),
         if (isFeatured)
           Positioned(
-            top: 0,
-            left: 0,
+            top: -6,
+            left: -4,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-              decoration: const BoxDecoration(
-                color: Color(0xFFFFC107),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(10),
-                  bottomRight: Radius.circular(8),
-                ),
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFB800),
+                borderRadius: BorderRadius.circular(5),
               ),
               child: const Text(
                 'FEATURED',
                 style: TextStyle(
-                  fontSize: 8,
+                  color: Colors.white,
+                  fontSize: 7,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF1A2040),
-                  letterSpacing: 0.5,
+                  letterSpacing: 0.8,
                 ),
               ),
             ),
@@ -197,64 +249,40 @@ class _ProductImage extends StatelessWidget {
   }
 }
 
-class _PlaceholderImage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 90,
-      height: 90,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0F2FA),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: const Icon(
-        Icons.laptop_mac,
-        size: 40,
-        color: Color(0xFFBBBFD4),
-      ),
-    );
-  }
-}
-
-// ─── Match Badge ──────────────────────────────────────────────────────────────
 class _MatchBadge extends StatelessWidget {
-  final int percentage;
+  final int percent;
+  final Color color;
 
-  const _MatchBadge({required this.percentage});
-
-  Color get _color {
-    if (percentage >= 95) return const Color(0xFF1A73E8);
-    if (percentage >= 85) return const Color(0xFF0B9E72);
-    return const Color(0xFF7B61FF);
-  }
+  const _MatchBadge({required this.percent, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
       decoration: BoxDecoration(
-        color: _color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: _color.withValues(alpha: 0.3), width: 1),
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
-            '$percentage%',
+            '$percent%',
             style: TextStyle(
+              color: color,
               fontSize: 13,
-              fontWeight: FontWeight.w800,
-              color: _color,
+              fontWeight: FontWeight.bold,
+              height: 1,
             ),
           ),
+          const SizedBox(height: 2),
           Text(
             'MATCH',
             style: TextStyle(
-              fontSize: 8,
+              color: color,
+              fontSize: 7,
               fontWeight: FontWeight.w700,
-              color: _color,
-              letterSpacing: 0.5,
+              letterSpacing: 0.8,
             ),
           ),
         ],
@@ -263,7 +291,6 @@ class _MatchBadge extends StatelessWidget {
   }
 }
 
-// ─── Spec Badge ───────────────────────────────────────────────────────────────
 class _SpecBadge extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -273,22 +300,22 @@ class _SpecBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
-        color: const Color(0xFFF4F5FB),
+        color: const Color(0xFFF3F4F6),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: const Color(0xFF888EA8)),
-          const SizedBox(width: 4),
+          Icon(icon, size: 11, color: const Color(0xFF6B7280)),
+          const SizedBox(width: 3),
           Text(
             label,
             style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF444B6E),
+              fontSize: 10,
+              color: Color(0xFF374151),
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -297,52 +324,54 @@ class _SpecBadge extends StatelessWidget {
   }
 }
 
-// ─── Action Button ────────────────────────────────────────────────────────────
 class _ActionButton extends StatelessWidget {
   final bool isPrimary;
+  final VoidCallback? onPressed;
   final String label;
 
-  const _ActionButton({required this.isPrimary, required this.label});
+  const _ActionButton({
+    required this.isPrimary,
+    this.onPressed,
+    required this.label,
+  });
 
   @override
   Widget build(BuildContext context) {
     if (isPrimary) {
       return ElevatedButton(
-        onPressed: () {},
+        onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF1A73E8),
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
           elevation: 0,
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
         child: Text(
           label,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-          ),
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
         ),
       );
     }
     return OutlinedButton(
-      onPressed: () {},
+      onPressed: onPressed,
       style: OutlinedButton.styleFrom(
-        foregroundColor: const Color(0xFF444B6E),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        side: const BorderSide(color: Color(0xFFCDD0E0), width: 1.5),
+        foregroundColor: const Color(0xFF1A73E8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        side: const BorderSide(color: Color(0xFF1A73E8)),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
         ),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-        ),
+        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
       ),
     );
   }

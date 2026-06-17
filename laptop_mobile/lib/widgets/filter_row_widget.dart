@@ -1,86 +1,85 @@
 import 'package:flutter/material.dart';
 
-class FilterRowWidget extends StatefulWidget {
-  final List<Map<String, String>> filters;
+class FilterChipData {
+  final String label;
+  final bool removable;
+  final bool hasDropdown;
+
+  const FilterChipData({
+    required this.label,
+    this.removable = false,
+    this.hasDropdown = false,
+  });
+}
+
+class FilterRowWidget extends StatelessWidget {
+  final List<FilterChipData> filters;
   final VoidCallback onClearAll;
+  final ValueChanged<int> onRemoveFilter;
 
   const FilterRowWidget({
     super.key,
     required this.filters,
     required this.onClearAll,
+    required this.onRemoveFilter,
   });
 
   @override
-  State<FilterRowWidget> createState() => _FilterRowWidgetState();
-}
-
-class _FilterRowWidgetState extends State<FilterRowWidget> {
-  late List<Map<String, String>> _activeFilters;
-
-  @override
-  void initState() {
-    super.initState();
-    _activeFilters = List.from(widget.filters);
-  }
-
-  void _removeFilter(int index) {
-    setState(() {
-      _activeFilters.removeAt(index);
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
+    if (filters.isEmpty) return const SizedBox.shrink();
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.fromLTRB(14, 14, 0, 0),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header row: FILTERS + Clear All
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'FILTERS',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF888EA8),
-                  letterSpacing: 1.0,
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  setState(() => _activeFilters.clear());
-                  widget.onClearAll();
-                },
-                child: const Text(
-                  'Clear All',
+          // Header row
+          Padding(
+            padding: const EdgeInsets.only(right: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'FILTERS',
                   style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1A73E8),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
+                    color: Color(0xFF6B7280),
                   ),
                 ),
-              ),
-            ],
+                GestureDetector(
+                  onTap: onClearAll,
+                  child: const Text(
+                    'Clear All',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1A73E8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 8),
-          // Scrollable chip row
-          SizedBox(
-            height: 36,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: _activeFilters.length,
-              separatorBuilder: (context, index) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final filter = _activeFilters[index];
-                final isFirst = index == 0;
-                return _FilterChip(
-                  label: filter['label'] ?? '',
-                  isActive: isFirst,
-                  onRemove: isFirst ? () => _removeFilter(index) : null,
+          // Chips row
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.only(right: 14),
+            child: Row(
+              children: filters.asMap().entries.map((entry) {
+                final i = entry.key;
+                final chip = entry.value;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: _FilterChip(
+                    data: chip,
+                    isFirst: i == 0,
+                    onRemove: chip.removable ? () => onRemoveFilter(i) : null,
+                  ),
                 );
-              },
+              }).toList(),
             ),
           ),
         ],
@@ -90,59 +89,75 @@ class _FilterRowWidgetState extends State<FilterRowWidget> {
 }
 
 class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool isActive;
+  final FilterChipData data;
+  final bool isFirst;
   final VoidCallback? onRemove;
 
   const _FilterChip({
-    required this.label,
-    required this.isActive,
+    required this.data,
+    required this.isFirst,
     this.onRemove,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isFilled = isFirst;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      height: 32,
       decoration: BoxDecoration(
-        color: isActive ? const Color(0xFF1A73E8) : Colors.white,
+        color: isFilled ? const Color(0xFF1A73E8) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isActive
-              ? const Color(0xFF1A73E8)
-              : const Color(0xFFCDD0E0),
-          width: 1.5,
+          color: isFilled ? const Color(0xFF1A73E8) : const Color(0xFFD1D5DB),
         ),
+        boxShadow: isFilled
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF1A73E8).withValues(alpha: 0.30),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                )
+              ]
+            : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: isActive ? Colors.white : const Color(0xFF444B6E),
+          Padding(
+            padding: EdgeInsets.only(
+              left: 12,
+              right: (data.removable || data.hasDropdown) ? 4 : 12,
             ),
-          ),
-          if (onRemove != null) ...[
-            const SizedBox(width: 6),
-            GestureDetector(
-              onTap: onRemove,
-              child: Icon(
-                Icons.close,
-                size: 14,
-                color: isActive ? Colors.white : const Color(0xFF444B6E),
+            child: Text(
+              data.label,
+              style: TextStyle(
+                color: isFilled ? Colors.white : const Color(0xFF374151),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
               ),
             ),
-          ] else ...[
-            const SizedBox(width: 4),
-            Icon(
-              Icons.keyboard_arrow_down,
-              size: 16,
-              color: isActive ? Colors.white : const Color(0xFF444B6E),
+          ),
+          if (data.removable)
+            GestureDetector(
+              onTap: onRemove,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Icon(
+                  Icons.close,
+                  size: 13,
+                  color: isFilled ? Colors.white : const Color(0xFF6B7280),
+                ),
+              ),
             ),
-          ],
+          if (data.hasDropdown)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Icon(
+                Icons.keyboard_arrow_down,
+                size: 16,
+                color: isFilled ? Colors.white : const Color(0xFF6B7280),
+              ),
+            ),
         ],
       ),
     );
