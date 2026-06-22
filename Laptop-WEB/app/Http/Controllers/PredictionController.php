@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Prediction; // <-- Tambahkan ini
 use Illuminate\Http\Request;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\Exception\ProcessFailedException;
@@ -58,24 +59,31 @@ class PredictionController extends Controller
                 ], 500);
             }
 
+            // ========== TAMBAHKAN BAGIAN INI ==========
+            // Simpan riwayat prediksi ke database
+            Prediction::create([
+                'input_data'      => $validated,
+                'predicted_price' => $result['price'] ?? $result['data']['price'] ?? null,
+                'category'        => $result['category'] ?? $result['data']['category'] ?? null,
+                'status'          => 'success',
+            ]);
+            // ==========================================
+
             return response()->json([
                 'success' => true,
                 'data' => $result
             ], 200);
-
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'errors' => $e->errors()
             ], 422);
-
         } catch (ProcessFailedException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Prediction service error',
                 'error' => $e->getMessage()
             ], 500);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -146,20 +154,17 @@ class PredictionController extends Controller
                 'success' => true,
                 'data' => $result
             ], 200);
-
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'errors' => $e->errors()
             ], 422);
-
         } catch (ProcessFailedException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Recommendation service error',
                 'error' => $e->getMessage()
             ], 500);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
